@@ -6,17 +6,6 @@ namespace Microsoft.Maui.Platform
 {
 	internal static partial class MauiContextExtensions
 	{
-		public static FlowDirection GetFlowDirection(this IMauiContext mauiContext)
-		{
-			string resourceFlowDirection = ResourceManager.Current.DefaultContext.QualifierValues["LayoutDirection"];
-			if (resourceFlowDirection == "LTR")
-				return FlowDirection.LeftToRight;
-			else if (resourceFlowDirection == "RTL")
-				return FlowDirection.RightToLeft;
-
-			return FlowDirection.MatchParent;
-		}
-
 		public static NavigationRootManager GetNavigationRootManager(this IMauiContext mauiContext) =>
 			mauiContext.Services.GetRequiredService<NavigationRootManager>();
 
@@ -39,7 +28,7 @@ namespace Microsoft.Maui.Platform
 
 			if (registerNewNavigationRoot)
 			{
-				scopedContext.AddWeakSpecific(new NavigationRootManager(scopedContext));
+				scopedContext.AddWeakSpecific(new NavigationRootManager(scopedContext.GetPlatformWindow()));
 			}
 
 			return scopedContext;

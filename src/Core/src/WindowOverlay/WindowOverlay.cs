@@ -9,6 +9,8 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
+#elif TIZEN
+using PlatformView = ElmSharp.EvasObject;
 #elif NETSTANDARD
 using PlatformView = System.Object;
 #endif
@@ -69,13 +71,13 @@ namespace Microsoft.Maui
 		}
 
 		/// <inheritdoc/>
-		public float Density { get; internal set; } = 1;
+		public float Density => Window?.RequestDisplayDensity() ?? 1f;
 
 		/// <inheritdoc/>
 		public event EventHandler<WindowOverlayTappedEventArgs>? Tapped;
 
 		/// <inheritdoc/>
-		public void Draw(ICanvas canvas, RectangleF dirtyRect)
+		public void Draw(ICanvas canvas, RectF dirtyRect)
 		{
 			if (!IsVisible)
 				return;

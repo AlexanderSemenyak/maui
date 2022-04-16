@@ -3,8 +3,10 @@ using PlatformView = Microsoft.Maui.Platform.MauiPicker;
 #elif MONOANDROID
 using PlatformView = Microsoft.Maui.Platform.MauiPicker;
 #elif WINDOWS
-using PlatformView = Microsoft.Maui.Platform.MauiComboBox;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+using PlatformView = Microsoft.UI.Xaml.Controls.ComboBox;
+#elif TIZEN
+using PlatformView = Tizen.UIExtensions.ElmSharp.Entry;
+#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -14,7 +16,7 @@ namespace Microsoft.Maui.Handlers
 	{
 		public static IPropertyMapper<IPicker, IPickerHandler> Mapper = new PropertyMapper<IPicker, PickerHandler>(ViewMapper)
 		{
-#if __ANDROID__
+#if __ANDROID__ || WINDOWS
 			[nameof(IPicker.Background)] = MapBackground,
 #endif
 			[nameof(IPicker.CharacterSpacing)] = MapCharacterSpacing,

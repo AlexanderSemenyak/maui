@@ -1,8 +1,12 @@
 ﻿#nullable enable
-#if __IOS__ || MACCATALYST || WINDOWS
+#if __IOS__ || MACCATALYST
 using PlatformView = Microsoft.Maui.Platform.MauiCheckBox;
 #elif __ANDROID__
 using PlatformView = AndroidX.AppCompat.Widget.AppCompatCheckBox;
+#elif WINDOWS
+using PlatformView = Microsoft.UI.Xaml.Controls.CheckBox;
+#elif TIZEN
+using PlatformView = ElmSharp.Check;
 #elif NETSTANDARD
 using PlatformView = System.Object;
 #endif

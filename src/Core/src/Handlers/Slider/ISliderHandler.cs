@@ -3,8 +3,10 @@ using PlatformView = UIKit.UISlider;
 #elif MONOANDROID
 using PlatformView = Android.Widget.SeekBar;
 #elif WINDOWS
-using PlatformView = Microsoft.Maui.Platform.MauiSlider;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+using PlatformView = Microsoft.UI.Xaml.Controls.Slider;
+#elif TIZEN
+using PlatformView = ElmSharp.Slider;
+#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 

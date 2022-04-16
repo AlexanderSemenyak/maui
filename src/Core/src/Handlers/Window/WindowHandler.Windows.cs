@@ -27,10 +27,10 @@ namespace Microsoft.Maui.Handlers
 		}
 
 		protected override void DisconnectHandler(UI.Xaml.Window platformView)
-		{			
+		{
 			MauiContext
 				?.GetNavigationRootManager()
-				?.Disconnect();			
+				?.Disconnect();
 
 			_rootPanel?.Children?.Clear();
 			platformView.Content = null;
@@ -45,7 +45,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			_ = handler.MauiContext ?? throw new InvalidOperationException($"{nameof(MauiContext)} should have been set by base class.");
 			var windowManager = handler.MauiContext.GetNavigationRootManager();
-			windowManager.Connect(handler.VirtualView.Content);
+			windowManager.Connect(handler.VirtualView.Content.ToPlatform(handler.MauiContext));
 			var rootPanel = handler.PlatformView.Content as Panel;
 
 			if (rootPanel == null)
@@ -70,8 +70,30 @@ namespace Microsoft.Maui.Handlers
 			{
 				_ = handler.MauiContext ?? throw new InvalidOperationException($"{nameof(MauiContext)} should have been set by base class.");
 				var windowManager = handler.MauiContext.GetNavigationRootManager();
-				windowManager.SetMenuBar(mb.MenuBar);
+				windowManager.SetMenuBar(mb.MenuBar?.ToPlatform(handler.MauiContext!) as MenuBar);
 			}
+		}
+
+		public static void MapFlowDirection(IWindowHandler handler, IWindow view)
+		{
+			var WindowHandle = handler.PlatformView.GetWindowHandle();
+
+			// Retrieve current extended style
+			var extended_style = PlatformMethods.GetWindowLongPtr(WindowHandle, PlatformMethods.WindowLongFlags.GWL_EXSTYLE);
+			long updated_style;
+			if (view.FlowDirection == FlowDirection.RightToLeft)
+				updated_style = extended_style | (long)PlatformMethods.ExtendedWindowStyles.WS_EX_LAYOUTRTL;
+			else
+				updated_style = extended_style & ~((long)PlatformMethods.ExtendedWindowStyles.WS_EX_LAYOUTRTL);
+
+			if (updated_style != extended_style)
+				PlatformMethods.SetWindowLongPtr(WindowHandle, PlatformMethods.WindowLongFlags.GWL_EXSTYLE, updated_style);
+		}
+
+		public static void MapRequestDisplayDensity(IWindowHandler handler, IWindow window, object? args)
+		{
+			if (args is DisplayDensityRequest request)
+				request.SetResult(handler.PlatformView.GetDisplayDensity());
 		}
 	}
 }

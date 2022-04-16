@@ -22,7 +22,6 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	internal static class ToolbarExtensions
 	{
-		static Drawable? _defaultNavigationIcon;
 		static ColorStateList? _defaultTitleTextColor;
 		static int? _defaultNavigationIconColor;
 
@@ -78,11 +77,17 @@ namespace Microsoft.Maui.Controls.Platform
 
 		public static void UpdateBackButton(this AToolbar nativeToolbar, Toolbar toolbar)
 		{
-			_defaultNavigationIcon ??= nativeToolbar.NavigationIcon;
-
 			if (toolbar.BackButtonVisible)
 			{
-				nativeToolbar.NavigationIcon ??= _defaultNavigationIcon;
+				var context =
+					nativeToolbar.Context?.GetThemedContext() ??
+					nativeToolbar.Context ??
+					toolbar.Handler?.MauiContext?.Context;
+
+				nativeToolbar.NavigationIcon ??= new DrawerArrowDrawable(context!)
+				{
+					Progress = 1
+				};
 
 				var backButtonTitle = toolbar.BackButtonTitle;
 				ImageSource image = toolbar.TitleIcon;
@@ -100,39 +105,55 @@ namespace Microsoft.Maui.Controls.Platform
 			else
 			{
 				if (!toolbar.DrawerToggleVisible)
+				{
 					nativeToolbar.NavigationIcon = null;
+				}
+				else
+				{
+					nativeToolbar.SetNavigationContentDescription(Resource.String.nav_app_bar_open_drawer_description);
+				}
 			}
 
 			nativeToolbar.UpdateIconColor(toolbar);
 			nativeToolbar.UpdateBarTextColor(toolbar);
 		}
 
-		public static void UpdateBarBackgroundColor(this AToolbar nativeToolbar, Toolbar toolbar)
-		{
-			var tintColor = toolbar.BarBackgroundColor;
-
-			if (tintColor == null)
-			{
-				nativeToolbar.BackgroundTintMode = null;
-			}
-			else
-			{
-				nativeToolbar.BackgroundTintMode = PorterDuff.Mode.Src;
-				nativeToolbar.BackgroundTintList = ColorStateList.ValueOf(tintColor.ToPlatform());
-			}
-		}
-
 		public static void UpdateBarBackground(this AToolbar nativeToolbar, Toolbar toolbar)
 		{
 			Brush barBackground = toolbar.BarBackground;
-			nativeToolbar.UpdateBackground(barBackground);
+
+			if (barBackground is SolidColorBrush solidColor)
+			{
+				var tintColor = solidColor.Color;
+				if (tintColor == null)
+				{
+					nativeToolbar.BackgroundTintMode = null;
+				}
+				else
+				{
+					nativeToolbar.BackgroundTintMode = PorterDuff.Mode.Src;
+					nativeToolbar.BackgroundTintList = ColorStateList.ValueOf(tintColor.ToPlatform());
+				}
+			}
+			else
+			{
+				nativeToolbar.UpdateBackground(barBackground);
+
+				if (Brush.IsNullOrEmpty(barBackground))
+					nativeToolbar.BackgroundTintMode = null;
+			}
 		}
 
 		public static void UpdateIconColor(this AToolbar nativeToolbar, Toolbar toolbar)
 		{
 			var navIconColor = toolbar.IconColor;
 			if (navIconColor != null && nativeToolbar.NavigationIcon != null)
+			{
+				if (nativeToolbar.NavigationIcon is DrawerArrowDrawable dad)
+					dad.Color = Android.Graphics.Color.White;
+
 				nativeToolbar.NavigationIcon.SetColorFilter(navIconColor, FilterMode.SrcAtop);
+			}
 		}
 
 		public static void UpdateBarTextColor(this AToolbar nativeToolbar, Toolbar toolbar)
@@ -298,7 +319,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 			menuitem.SetOnMenuItemClickListener(new GenericMenuClickListener(((IMenuItemController)item).Activate));
 
-			if (item.Order != ToolbarItemOrder.Secondary && !PlatformVersion.IsAtLeast(26) && (tintColor != null && tintColor != null))
+			if (item.Order != ToolbarItemOrder.Secondary && !OperatingSystem.IsAndroidVersionAtLeast(26) && (tintColor != null && tintColor != null))
 			{
 				var view = toolbar.FindViewById(menuitem.ItemId);
 				if (view is ATextView textView)

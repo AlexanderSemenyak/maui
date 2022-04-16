@@ -4,9 +4,9 @@ using AppKit;
 using AuthenticationServices;
 using Foundation;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Authentication
 {
-	public partial class WebAuthenticatorImplementation : IWebAuthenticator, IPlatformWebAuthenticatorCallback
+	partial class WebAuthenticatorImplementation : IWebAuthenticator, IPlatformWebAuthenticatorCallback
 	{
 		const int asWebAuthenticationSessionErrorCodeCanceledLogin = 1;
 		const string asWebAuthenticationSessionErrorDomain = "com.apple.AuthenticationServices.WebAuthenticationSession";
@@ -39,7 +39,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			redirectUri = callbackUrl;
 			var scheme = redirectUri.Scheme;
 
-			if (DeviceInfo.Version >= new Version(10, 15))
+			if (OperatingSystem.IsMacOSVersionAtLeast(10, 15))
 			{
 				static void AuthSessionCallback(NSUrl cbUrl, NSError error)
 				{

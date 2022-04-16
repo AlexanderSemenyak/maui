@@ -9,9 +9,11 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Core.Content;
 using AndroidX.Core.View;
-using Microsoft.Maui.Essentials;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
+using Microsoft.Maui.Media;
 using Microsoft.Maui.Primitives;
 using AColor = Android.Graphics.Color;
 using ALayoutDirection = Android.Views.LayoutDirection;
@@ -43,7 +45,7 @@ namespace Microsoft.Maui.Platform
 			}
 
 			// NOTE: use named arguments for clarity
-			ViewHelper.Set(platformView,
+			PlatformInterop.Set(platformView,
 				visibility: visibility,
 				layoutDirection: (int)GetLayoutDirection(view),
 				minimumHeight: (int)context.ToPixels(view.MinimumHeight),
@@ -69,17 +71,26 @@ namespace Microsoft.Maui.Platform
 
 		public static void Focus(this AView platformView, FocusRequest request)
 		{
+			request.IsFocused = true;
+
 			// Android does the actual focus/unfocus work on the main looper
 			// So in case we're setting the focus in response to another control's un-focusing,
 			// we need to post the handling of it to the main looper so that it happens _after_ all the other focus
-			// work is done; otherwise, a call to ClearFocus on another control will kill the focus we set here
-			MainThread.BeginInvokeOnMainThread(() =>
+			// work is done; otherwise, a call to ClearFocus on another control will kill the focus we set 
+
+			var q = Looper.MyLooper();
+			if (q != null)
+				new Handler(q).Post(RequestFocus);
+			else
+				MainThread.InvokeOnMainThreadAsync(RequestFocus);
+
+			void RequestFocus()
 			{
 				if (platformView == null || platformView.IsDisposed())
 					return;
 
 				platformView?.RequestFocus();
-			});
+			}
 		}
 
 		public static void Unfocus(this AView platformView, IView view)
@@ -157,30 +168,24 @@ namespace Microsoft.Maui.Platform
 			bool hasBorder = border.Shape != null && border.Stroke != null;
 
 			if (hasBorder)
-				platformView.UpdateMauiDrawable(border);
+				platformView.UpdateBorderStroke(border);
 		}
 
-		public static void UpdateBackground(this AView platformView, IView view, Drawable? defaultBackground = null) =>
-			platformView.UpdateBackground(view.Background, defaultBackground);
+		public static void UpdateBackground(this AView platformView, IView view) =>
+			platformView.UpdateBackground(view.Background);
 
-		public static void UpdateBackground(this AView platformView, Paint? background, Drawable? defaultBackground = null)
+		public static void UpdateBackground(this AView platformView, Paint? background)
 		{
-			// Remove previous background gradient if any
-			if (platformView.Background is MauiDrawable mauiDrawable)
-			{
-				platformView.Background = null;
-				mauiDrawable.Dispose();
-			}
-
 			var paint = background;
 
-			if (paint.IsNullOrEmpty())
+			if (!paint.IsNullOrEmpty())
 			{
-				if (defaultBackground != null)
-					platformView.Background = defaultBackground;
-			}
-			else
-			{
+				// Remove previous background gradient if any
+				if (platformView.Background is MauiDrawable mauiDrawable)
+				{
+					platformView.Background = null;
+					mauiDrawable.Dispose();
+				}
 				if (paint is SolidPaint solidPaint)
 				{
 					if (solidPaint.Color is Color backgroundColor)
@@ -215,20 +220,13 @@ namespace Microsoft.Maui.Platform
 
 		static ALayoutDirection GetLayoutDirection(IView view)
 		{
-			if (view.FlowDirection == view.Handler?.MauiContext?.GetFlowDirection() ||
-				view.FlowDirection == FlowDirection.MatchParent)
+			return view.FlowDirection switch
 			{
-				return ALayoutDirection.Inherit;
-			}
-			else if (view.FlowDirection == FlowDirection.RightToLeft)
-			{
-				return ALayoutDirection.Rtl;
-			}
-			else if (view.FlowDirection == FlowDirection.LeftToRight)
-			{
-				return ALayoutDirection.Ltr;
-			}
-			return ALayoutDirection.Inherit;
+				FlowDirection.MatchParent => ALayoutDirection.Inherit,
+				FlowDirection.LeftToRight => ALayoutDirection.Ltr,
+				FlowDirection.RightToLeft => ALayoutDirection.Rtl,
+				_ => ALayoutDirection.Inherit,
+			};
 		}
 
 		public static bool GetClipToOutline(this AView view)
@@ -251,25 +249,25 @@ namespace Microsoft.Maui.Platform
 		{
 			if (!string.IsNullOrWhiteSpace(view.AutomationId))
 			{
-				ViewHelper.SetContentDescriptionForAutomationId(platformView, view.AutomationId);
+				PlatformInterop.SetContentDescriptionForAutomationId(platformView, view.AutomationId);
 			}
 		}
 
 		public static void InvalidateMeasure(this AView platformView, IView view)
 		{
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateWidth(this AView platformView, IView view)
 		{
 			// GetDesiredSize will take the specified Width into account during the layout
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateHeight(this AView platformView, IView view)
 		{
 			// GetDesiredSize will take the specified Height into account during the layout
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateMinimumHeight(this AView platformView, IView view)
@@ -278,7 +276,7 @@ namespace Microsoft.Maui.Platform
 
 			var value = (int)platformView.Context!.ToPixels(min);
 			platformView.SetMinimumHeight(value);
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateMinimumWidth(this AView platformView, IView view)
@@ -287,70 +285,46 @@ namespace Microsoft.Maui.Platform
 
 			var value = (int)platformView.Context!.ToPixels(min);
 			platformView.SetMinimumWidth(value);
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateMaximumHeight(this AView platformView, IView view)
 		{
 			// GetDesiredSize will take the specified Height into account during the layout
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void UpdateMaximumWidth(this AView platformView, IView view)
 		{
 			// GetDesiredSize will take the specified Height into account during the layout
-			ViewHelper.RequestLayoutIfNeeded(platformView);
+			PlatformInterop.RequestLayoutIfNeeded(platformView);
 		}
 
 		public static void RemoveFromParent(this AView view)
 		{
 			if (view != null)
-				ViewHelper.RemoveFromParent(view);
+				PlatformInterop.RemoveFromParent(view);
 		}
 
-		public static Task<byte[]?> RenderAsPNG(this IView view)
-		{
-			var platformView = view?.ToPlatform();
-			if (platformView == null)
-				return Task.FromResult<byte[]?>(null);
-
-			return platformView.RenderAsPNG();
-		}
-
-		public static Task<byte[]?> RenderAsJPEG(this IView view)
-		{
-			var platformView = view?.ToPlatform();
-			if (platformView == null)
-				return Task.FromResult<byte[]?>(null);
-
-			return platformView.RenderAsJPEG();
-		}
-
-		public static Task<byte[]?> RenderAsPNG(this AView view)
-			=> Task.FromResult<byte[]?>(view.RenderAsImage(Android.Graphics.Bitmap.CompressFormat.Png));
-
-		public static Task<byte[]?> RenderAsJPEG(this AView view)
-			=> Task.FromResult<byte[]?>(view.RenderAsImage(Android.Graphics.Bitmap.CompressFormat.Jpeg));
-
-		internal static Rectangle GetPlatformViewBounds(this IView view)
+		internal static Rect GetPlatformViewBounds(this IView view)
 		{
 			var platformView = view?.ToPlatform();
 			if (platformView?.Context == null)
 			{
-				return new Rectangle();
+				return new Rect();
 			}
 
 			return platformView.GetPlatformViewBounds();
 		}
 
-		internal static Rectangle GetPlatformViewBounds(this View platformView)
+		internal static Rect GetPlatformViewBounds(this View platformView)
 		{
 			if (platformView?.Context == null)
-				return new Rectangle();
+				return new Rect();
 
 			var location = new int[2];
 			platformView.GetLocationOnScreen(location);
-			return new Rectangle(
+			return new Rect(
 				location[0],
 				location[1],
 				(int)platformView.Context.ToPixels(platformView.Width),
@@ -367,7 +341,7 @@ namespace Microsoft.Maui.Platform
 
 		internal static Matrix4x4 GetViewTransform(this View view)
 		{
-			if (view?.Matrix == null || view.Matrix.IsIdentity)
+			if (view?.Matrix == null)
 				return new Matrix4x4();
 
 			var m = new float[16];
@@ -407,60 +381,77 @@ namespace Microsoft.Maui.Platform
 			};
 		}
 
-		internal static Graphics.Rectangle GetBoundingBox(this IView view)
+		internal static Graphics.Rect GetBoundingBox(this IView view)
 			=> view.ToPlatform().GetBoundingBox();
 
-		internal static Graphics.Rectangle GetBoundingBox(this View? platformView)
+		internal static Graphics.Rect GetBoundingBox(this View? platformView)
 		{
 			if (platformView == null)
-				return new Rectangle();
+				return new Rect();
 
 			var rect = new Android.Graphics.Rect();
 			platformView.GetGlobalVisibleRect(rect);
-			return new Rectangle(rect.ExactCenterX() - (rect.Width() / 2), rect.ExactCenterY() - (rect.Height() / 2), (float)rect.Width(), (float)rect.Height());
+			return new Rect(rect.ExactCenterX() - (rect.Width() / 2), rect.ExactCenterY() - (rect.Height() / 2), (float)rect.Width(), (float)rect.Height());
 		}
 
+		internal static bool IsLoaded(this View frameworkElement) =>
+			frameworkElement.IsAttachedToWindow;
 
-		internal static void OnLoaded(this View frameworkElement, Action action)
+		internal static IDisposable OnLoaded(this View frameworkElement, Action action)
 		{
-			if (frameworkElement.IsAttachedToWindow)
+			if (frameworkElement.IsLoaded())
 			{
 				action();
+				return new ActionDisposable(() => { });
 			}
 
 			EventHandler<AView.ViewAttachedToWindowEventArgs>? routedEventHandler = null;
-			routedEventHandler = (_, __) =>
+			ActionDisposable disposable = new ActionDisposable(() =>
 			{
 				if (routedEventHandler != null)
 					frameworkElement.ViewAttachedToWindow -= routedEventHandler;
+			});
 
+			routedEventHandler = (_, __) =>
+			{
+				disposable.Dispose();
 				action();
 			};
 
 			frameworkElement.ViewAttachedToWindow += routedEventHandler;
+			return disposable;
 		}
 
-		internal static void OnUnloaded(this View view, Action action)
+		internal static IDisposable OnUnloaded(this View view, Action action)
 		{
-			if (!view.IsAttachedToWindow)
+			if (!view.IsLoaded())
 			{
 				action();
+				return new ActionDisposable(() => { });
 			}
 
 			EventHandler<AView.ViewDetachedFromWindowEventArgs>? routedEventHandler = null;
-			routedEventHandler = (_, __) =>
+			ActionDisposable disposable = new ActionDisposable(() =>
 			{
 				if (routedEventHandler != null)
 					view.ViewDetachedFromWindow -= routedEventHandler;
+			});
 
+			routedEventHandler = (_, __) =>
+			{
+				disposable.Dispose();
 				// This event seems to fire prior to the view actually being
 				// detached from the window
-				if (view.IsAttachedToWindow)
+				if (view.IsLoaded())
 				{
 					var q = Looper.MyLooper();
 					if (q != null)
 					{
-						new Handler(q).Post(action);
+						new Handler(q).Post(() =>
+						{
+							action.Invoke();
+						});
+
 						return;
 					}
 				}
@@ -469,6 +460,7 @@ namespace Microsoft.Maui.Platform
 			};
 
 			view.ViewDetachedFromWindow += routedEventHandler;
+			return disposable;
 		}
 
 		internal static IViewParent? GetParent(this View? view)
@@ -493,7 +485,7 @@ namespace Microsoft.Maui.Platform
 			var deviceIndependentTop = context.FromPixels(top);
 			var deviceIndependentRight = context.FromPixels(right);
 			var deviceIndependentBottom = context.FromPixels(bottom);
-			var destination = Rectangle.FromLTRB(0, 0,
+			var destination = Rect.FromLTRB(0, 0,
 				deviceIndependentRight - deviceIndependentLeft, deviceIndependentBottom - deviceIndependentTop);
 
 			if (!view.Frame.Equals(destination))

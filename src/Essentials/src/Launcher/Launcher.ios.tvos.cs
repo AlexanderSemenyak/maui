@@ -2,14 +2,14 @@ using System;
 using System.Threading.Tasks;
 using CoreGraphics;
 using Foundation;
+using Microsoft.Maui.Devices;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Graphics.Platform;
-using ObjCRuntime;
 using UIKit;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.ApplicationModel
 {
-	public partial class LauncherImplementation
+	partial class LauncherImplementation
 	{
 		Task<bool> PlatformCanOpenAsync(Uri uri) =>
 			Task.FromResult(UIApplication.SharedApplication.CanOpenUrl(WebUtils.GetNativeUrl(uri)));
@@ -18,9 +18,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			PlatformOpenAsync(WebUtils.GetNativeUrl(uri));
 
 		Task<bool> PlatformOpenAsync(NSUrl nativeUrl) =>
-			Platform.HasOSVersion(10, 0)
-				? UIApplication.SharedApplication.OpenUrlAsync(nativeUrl, new UIApplicationOpenUrlOptions())
-				: Task.FromResult(UIApplication.SharedApplication.OpenUrl(nativeUrl));
+			UIApplication.SharedApplication.OpenUrlAsync(nativeUrl, new UIApplicationOpenUrlOptions());
 
 		Task<bool> PlatformTryOpenAsync(Uri uri)
 		{
@@ -48,7 +46,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			CGRect rect;
 
-			if (request.PresentationSourceBounds != Rectangle.Zero)
+			if (request.PresentationSourceBounds != Rect.Zero)
 			{
 				rect = request.PresentationSourceBounds.AsCGRect();
 			}

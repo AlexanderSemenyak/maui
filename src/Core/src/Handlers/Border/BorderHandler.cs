@@ -5,6 +5,8 @@ using PlatformView = Microsoft.Maui.Platform.ContentView;
 using PlatformView = Microsoft.Maui.Platform.ContentViewGroup;
 #elif WINDOWS
 using PlatformView = Microsoft.Maui.Platform.ContentPanel;
+#elif TIZEN
+using PlatformView = Microsoft.Maui.Platform.BorderView;
 #elif NETSTANDARD
 using PlatformView = System.Object;
 #endif
@@ -15,6 +17,10 @@ namespace Microsoft.Maui.Handlers
 	{
 		public static IPropertyMapper<IBorderView, IBorderHandler> Mapper = new PropertyMapper<IBorderView, IBorderHandler>(ViewMapper)
 		{
+#if __ANDROID__
+			[nameof(IContentView.Height)] = MapHeight,
+			[nameof(IContentView.Width)] = MapWidth,
+#endif
 			[nameof(IContentView.Background)] = MapBackground,
 			[nameof(IContentView.Content)] = MapContent,
 			[nameof(IBorderStroke.Shape)] = MapStrokeShape,

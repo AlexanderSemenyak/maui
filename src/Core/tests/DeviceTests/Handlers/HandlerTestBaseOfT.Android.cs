@@ -152,6 +152,21 @@ namespace Microsoft.Maui.DeviceTests
 			Assert.Equal(expected, result, 0);
 		}
 
+		[Fact]
+		public async Task NeedsContainerWhenInputTransparent() 
+		{
+			var view = new TStub()
+			{
+				InputTransparent = true
+			};
+
+			var handler = await CreateHandlerAsync(view);
+
+			var viewHandler = handler as ViewHandler;
+
+			Assert.True(viewHandler.NeedsContainer);
+		}
+
 		protected string GetAutomationId(IViewHandler viewHandler) =>
 			$"{GetSemanticPlatformElement(viewHandler).ContentDescription}";
 
@@ -167,7 +182,6 @@ namespace Microsoft.Maui.DeviceTests
 
 		protected bool GetIsAccessibilityElement(IViewHandler viewHandler) =>
 			GetSemanticPlatformElement(viewHandler).ImportantForAccessibility == ImportantForAccessibility.Yes;
-
 
 		public View GetSemanticPlatformElement(IViewHandler viewHandler)
 		{
@@ -193,7 +207,7 @@ namespace Microsoft.Maui.DeviceTests
 			// AccessibilityHeading is only available on API 28+
 			// With lower Apis you use ViewCompat.SetAccessibilityHeading
 			// but there exists no ViewCompat.GetAccessibilityHeading
-			if (PlatformVersion.IsAtLeast(28))
+			if (OperatingSystem.IsAndroidVersionAtLeast(28))
 				return ((View)viewHandler.PlatformView).AccessibilityHeading
 					? SemanticHeadingLevel.Level1 : SemanticHeadingLevel.None;
 
@@ -286,10 +300,10 @@ namespace Microsoft.Maui.DeviceTests
 				return Visibility.Hidden;
 		}
 
-		protected Maui.Graphics.Rectangle GetPlatformViewBounds(IViewHandler viewHandler) =>
+		protected Maui.Graphics.Rect GetPlatformViewBounds(IViewHandler viewHandler) =>
 			((View)viewHandler.PlatformView).GetPlatformViewBounds();
 
-		protected Maui.Graphics.Rectangle GetBoundingBox(IViewHandler viewHandler) =>
+		protected Maui.Graphics.Rect GetBoundingBox(IViewHandler viewHandler) =>
 			((View)viewHandler.PlatformView).GetBoundingBox();
 
 		protected Matrix4x4 GetViewTransform(IViewHandler viewHandler) =>

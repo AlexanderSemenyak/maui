@@ -4,6 +4,8 @@ using PlatformView = UIKit.UIView;
 using PlatformView = Android.Views.View;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
+#elif TIZEN
+using PlatformView = ElmSharp.EvasObject;
 #elif NETSTANDARD
 using PlatformView = System.Object;
 #endif
@@ -69,11 +71,18 @@ namespace Microsoft.Maui
 			return service;
 		}
 
-		public static async Task<T> InvokeAsync<T>(this IElementHandler handler, string commandName,
+		public static Task<T> InvokeAsync<T>(this IElementHandler handler, string commandName,
 			TaskCompletionSource<T> args)
 		{
 			handler?.Invoke(commandName, args);
-			return await args.Task;
+			return args.Task;
+		}
+
+		public static T InvokeWithResult<T>(this IElementHandler handler, string commandName,
+			RetrievePlatformValueRequest<T> args)
+		{
+			handler?.Invoke(commandName, args);
+			return args.Result;
 		}
 	}
 }

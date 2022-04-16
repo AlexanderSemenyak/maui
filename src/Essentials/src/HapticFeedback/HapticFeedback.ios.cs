@@ -1,11 +1,8 @@
-using System;
-using System.Threading.Tasks;
-using ObjCRuntime;
 using UIKit;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Devices
 {
-	public partial class HapticFeedbackImplementation : IHapticFeedback
+	partial class HapticFeedbackImplementation : IHapticFeedback
 	{
 		public bool IsSupported => true;
 
@@ -24,24 +21,18 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 		void Click()
 		{
-			if (Platform.HasOSVersion(10, 0))
-			{
-				var impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Light);
-				impact.Prepare();
-				impact.ImpactOccurred();
-				impact.Dispose();
-			}
+			var impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Light);
+			impact.Prepare();
+			impact.ImpactOccurred();
+			impact.Dispose();
 		}
 
-		public void LongPress()
+		void LongPress()
 		{
-			if (Platform.HasOSVersion(10, 0))
-			{
-				var impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Medium);
-				impact.Prepare();
-				impact.ImpactOccurred();
-				impact.Dispose();
-			}
+			var impact = new UIImpactFeedbackGenerator(UIImpactFeedbackStyle.Medium);
+			impact.Prepare();
+			impact.ImpactOccurred();
+			impact.Dispose();
 		}
 	}
 }

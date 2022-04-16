@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Android.Animation;
 using Android.Content;
+using Android.Graphics;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
@@ -192,6 +191,15 @@ namespace Microsoft.Maui.Platform
 			{
 				_hScrollView.Layout(0, 0, right - left, bottom - top);
 			}
+
+			if (CrossPlatformArrange == null)
+			{
+				return;
+			}
+
+			var destination = Context!.ToCrossPlatformRectInReferenceFrame(left, top, right, bottom);
+
+			CrossPlatformArrange(destination);
 		}
 
 		public void ScrollTo(int x, int y, bool instant, Action finished)
@@ -268,6 +276,8 @@ namespace Microsoft.Maui.Platform
 
 			animator.Start();
 		}
+
+		internal Func<Graphics.Rect, Graphics.Size>? CrossPlatformArrange { get; set; }
 	}
 
 	internal class MauiHorizontalScrollView : HorizontalScrollView, IScrollBarView
@@ -296,6 +306,24 @@ namespace Microsoft.Maui.Platform
 		}
 
 		internal bool IsBidirectional { get; set; }
+
+		public override void Draw(Canvas? canvas)
+		{
+			try
+			{
+				if (canvas != null)
+					canvas.ClipRect(canvas.ClipBounds);
+
+				base.Draw(canvas);
+			}
+			catch (Java.Lang.NullPointerException)
+			{
+				// This will most likely never run since UpdateScrollBars is called 
+				// when the scrollbars visibilities are updated but I left it here
+				// just in case there's an edge case that causes an exception
+				this.HandleScrollBarVisibilityChange();
+			}
+		}
 
 		public override bool OnInterceptTouchEvent(MotionEvent? ev)
 		{

@@ -21,14 +21,6 @@ namespace Microsoft.Maui.DeviceTests
 	[Category(TestCategory.NavigationPage)]
 	public partial class NavigationPageTests : HandlerTestBase
 	{
-		public bool IsBackButtonVisible(IElementHandler handler) =>
-			IsBackButtonVisible(handler.MauiContext);
-
-		public bool IsBackButtonVisible(IMauiContext mauiContext)
-		{
-			var navView = GetMauiNavigationView(mauiContext);
-			return navView.IsBackButtonVisible == UI.Xaml.Controls.NavigationViewBackButtonVisible.Visible;
-		}
 
 		public bool IsNavigationBarVisible(IElementHandler handler) =>
 			IsNavigationBarVisible(handler.MauiContext);
@@ -36,8 +28,8 @@ namespace Microsoft.Maui.DeviceTests
 		public bool IsNavigationBarVisible(IMauiContext mauiContext)
 		{
 			var navView = GetMauiNavigationView(mauiContext);
-			var header = navView.Header as WFrameworkElement;
-			return header.Visibility == UI.Xaml.Visibility.Visible;
+			var header = navView?.Header as WFrameworkElement;
+			return header?.Visibility == UI.Xaml.Visibility.Visible;
 		}
 
 		public bool ToolbarItemsMatch(
@@ -58,14 +50,25 @@ namespace Microsoft.Maui.DeviceTests
 			return true;
 		}
 
-		MauiToolbar GetPlatformToolbar(IElementHandler handler)
-		{
-			var navView = (RootNavigationView)GetMauiNavigationView(handler.MauiContext);
-			MauiToolbar windowHeader = (MauiToolbar)navView.Header;
-			return windowHeader;
-		}
-
 		string GetToolbarTitle(IElementHandler handler) =>
 			GetPlatformToolbar(handler).Title;
+
+
+		[Fact(DisplayName = "Back Button Enabled Changes with push/pop")]
+		public async Task BackButtonEnabledChangesWithPushPop()
+		{
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage());
+
+			await CreateHandlerAndAddToWindow<NavigationViewHandler>(navPage, async (handler) =>
+			{
+				var navView = (RootNavigationView)GetMauiNavigationView(handler.MauiContext);
+				Assert.False(navView.IsBackEnabled);
+				await navPage.PushAsync(new ContentPage());
+				Assert.True(navView.IsBackEnabled);
+				await navPage.PopAsync();
+				Assert.False(navView.IsBackEnabled);
+			});
+		}
 	}
 }

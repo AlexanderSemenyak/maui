@@ -15,7 +15,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		{
 			var app = new TestApp();
 			var window = app.CreateWindow() as IWindow;
-			app.LoadPage(new ContentPage());
+			(window as Window).Page = new ContentPage();
 			var windowOverlay = new WindowOverlay(window) as IWindowOverlay;
 
 			// If not processed by a window, should be false.
@@ -53,7 +53,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		{
 			var app = new TestApp();
 			var window = app.CreateWindow() as IWindow;
-			app.LoadPage(new ContentPage());
+			(window as Window).Page = new ContentPage();
 			var windowOverlay = new WindowOverlay(window) as IWindowOverlay;
 
 			// First time inserted, should be true.
@@ -78,7 +78,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 	public class TestWindowElement : IWindowOverlayElement
 	{
-		public void Draw(ICanvas canvas, RectangleF dirtyRect)
+		public void Draw(ICanvas canvas, RectF dirtyRect)
 		{
 		}
 

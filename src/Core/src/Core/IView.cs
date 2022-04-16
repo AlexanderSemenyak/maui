@@ -15,7 +15,7 @@ namespace Microsoft.Maui
 		string AutomationId { get; }
 
 		/// <summary>
-		/// Direction in which the UI elements on the page are scanned by the eye
+		/// Direction in which the UI elements are scanned by the eye
 		/// </summary>
 		FlowDirection FlowDirection { get; }
 
@@ -72,7 +72,7 @@ namespace Microsoft.Maui
 		/// <summary>
 		/// Gets the bounds of the View within its container.
 		/// </summary>
-		Rectangle Frame { get; set; }
+		Rect Frame { get; set; }
 
 		/// <summary>
 		/// Gets the specified width of the IView. 
@@ -129,7 +129,7 @@ namespace Microsoft.Maui
 		/// </summary>
 		/// <param name="bounds">The size that the parent computes for the child element.</param>
 		/// <returns>Return the actual arranged Size for this element.</returns>
-		Size Arrange(Rectangle bounds);
+		Size Arrange(Rect bounds);
 
 		/// <summary>
 		/// Updates the size of an View.
@@ -159,5 +159,10 @@ namespace Microsoft.Maui
 		/// Unsets focus to this View.
 		/// </summary>
 		void Unfocus();
+
+		/// <summary>
+		/// Gets a value indicating whether this element should be involved in the user interaction cycle.
+		/// </summary>
+		bool InputTransparent { get; }
 	}
 }

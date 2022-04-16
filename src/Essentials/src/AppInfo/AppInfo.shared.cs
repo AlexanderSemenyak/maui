@@ -1,9 +1,7 @@
 #nullable enable
 using System;
-using System.ComponentModel;
-using Microsoft.Maui.Essentials.Implementations;
 
-namespace Microsoft.Maui.Essentials
+namespace Microsoft.Maui.ApplicationModel
 {
 	public interface IAppInfo
 	{
@@ -22,6 +20,8 @@ namespace Microsoft.Maui.Essentials
 		AppTheme RequestedTheme { get; }
 
 		AppPackagingModel PackagingModel { get; }
+
+		LayoutDirection RequestedLayoutDirection { get; }
 	}
 
 	/// <include file="../../docs/Microsoft.Maui.Essentials/AppInfo.xml" path="Type[@FullName='Microsoft.Maui.Essentials.AppInfo']/Docs" />
@@ -50,15 +50,14 @@ namespace Microsoft.Maui.Essentials
 
 		public static AppPackagingModel PackagingModel => Current.PackagingModel;
 
+		public static LayoutDirection RequestedLayoutDirection => Current.RequestedLayoutDirection;
 
 		static IAppInfo? currentImplementation;
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
 		public static IAppInfo Current =>
 			currentImplementation ??= new AppInfoImplementation();
 
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public static void SetCurrent(IAppInfo? implementation) =>
+		internal static void SetCurrent(IAppInfo? implementation) =>
 			currentImplementation = implementation;
 	}
 

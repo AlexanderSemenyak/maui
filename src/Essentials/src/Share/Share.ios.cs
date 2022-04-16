@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Foundation;
@@ -6,11 +7,11 @@ using Microsoft.Maui.Graphics.Platform;
 using ObjCRuntime;
 using UIKit;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.ApplicationModel.DataTransfer
 {
-	public class ShareImplementation : IShare
+	partial class ShareImplementation : IShare
 	{
-		public Task RequestAsync(ShareTextRequest request)
+		Task PlatformRequestAsync(ShareTextRequest request)
 		{
 			var items = new List<NSObject>();
 			if (!string.IsNullOrWhiteSpace(request.Text))
@@ -25,20 +26,23 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			var activityController = new UIActivityViewController(items.ToArray(), null);
 
-			var vc = Platform.GetCurrentViewController();
+			var vc = WindowStateManager.Default.GetCurrentUIViewController(true);
 
 			if (activityController.PopoverPresentationController != null)
 			{
 				activityController.PopoverPresentationController.SourceView = vc.View;
 
-				if (request.PresentationSourceBounds != Rectangle.Zero || Platform.HasOSVersion(13, 0))
+				if (request.PresentationSourceBounds != Rect.Zero || OperatingSystem.IsIOSVersionAtLeast(13, 0))
 					activityController.PopoverPresentationController.SourceRect = request.PresentationSourceBounds.AsCGRect();
 			}
 
 			return vc.PresentViewControllerAsync(activityController, true);
 		}
 
-		public Task RequestAsync(ShareMultipleFilesRequest request)
+		Task PlatformRequestAsync(ShareFileRequest request) =>
+			PlatformRequestAsync((ShareMultipleFilesRequest)request);
+
+		Task PlatformRequestAsync(ShareMultipleFilesRequest request)
 		{
 			var items = new List<NSObject>();
 
@@ -54,13 +58,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 			var activityController = new UIActivityViewController(items.ToArray(), null);
 
-			var vc = Platform.GetCurrentViewController();
+			var vc = WindowStateManager.Default.GetCurrentUIViewController();
 
 			if (activityController.PopoverPresentationController != null)
 			{
 				activityController.PopoverPresentationController.SourceView = vc.View;
 
-				if (request.PresentationSourceBounds != Rectangle.Zero || Platform.HasOSVersion(13, 0))
+				if (request.PresentationSourceBounds != Rect.Zero || OperatingSystem.IsIOSVersionAtLeast(13, 0))
 					activityController.PopoverPresentationController.SourceRect = request.PresentationSourceBounds.AsCGRect();
 			}
 

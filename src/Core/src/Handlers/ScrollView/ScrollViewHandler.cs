@@ -6,7 +6,9 @@ using PlatformView = UIKit.UIScrollView;
 using PlatformView = Microsoft.Maui.Platform.MauiScrollView;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.ScrollViewer;
-#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
+#elif TIZEN
+using PlatformView = Tizen.UIExtensions.ElmSharp.ScrollView;
+#elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID && !TIZEN)
 using PlatformView = System.Object;
 #endif
 
@@ -21,7 +23,8 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IScrollView.VerticalScrollBarVisibility)] = MapVerticalScrollBarVisibility,
 			[nameof(IScrollView.Orientation)] = MapOrientation,
 #if __IOS__
-			[nameof(IScrollView.ContentSize)] = MapContentSize
+			[nameof(IScrollView.ContentSize)] = MapContentSize,
+			[nameof(IScrollView.IsEnabled)] = MapIsEnabled,
 #endif
 		};
 

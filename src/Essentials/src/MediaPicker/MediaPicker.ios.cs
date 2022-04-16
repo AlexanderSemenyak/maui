@@ -2,14 +2,16 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Foundation;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui.Storage;
 using MobileCoreServices;
-using ObjCRuntime;
 using Photos;
 using UIKit;
 
-namespace Microsoft.Maui.Essentials.Implementations
+namespace Microsoft.Maui.Media
 {
-	public partial class MediaPickerImplementation : IMediaPicker
+	partial class MediaPickerImplementation : IMediaPicker
 	{
 		static UIImagePickerController picker;
 
@@ -20,13 +22,23 @@ namespace Microsoft.Maui.Essentials.Implementations
 			=> PhotoAsync(options, true, true);
 
 		public Task<FileResult> CapturePhotoAsync(MediaPickerOptions options)
-			=> PhotoAsync(options, true, false);
+		{
+			if (!IsCaptureSupported)
+				throw new FeatureNotSupportedException();
+
+			return PhotoAsync(options, true, false);
+		}
 
 		public Task<FileResult> PickVideoAsync(MediaPickerOptions options)
 			=> PhotoAsync(options, false, true);
 
 		public Task<FileResult> CaptureVideoAsync(MediaPickerOptions options)
-			=> PhotoAsync(options, false, false);
+		{
+			if (!IsCaptureSupported)
+				throw new FeatureNotSupportedException();
+
+			return PhotoAsync(options, false, false);
+		}
 
 		public async Task<FileResult> PhotoAsync(MediaPickerOptions options, bool photo, bool pickExisting)
 		{
@@ -42,13 +54,13 @@ namespace Microsoft.Maui.Essentials.Implementations
 				await Permissions.EnsureGrantedAsync<Permissions.Microphone>();
 
 			// Check if picking existing or not and ensure permission accordingly as they can be set independently from each other
-			if (pickExisting && !Platform.HasOSVersion(11, 0))
+			if (pickExisting && !OperatingSystem.IsIOSVersionAtLeast(11, 0))
 				await Permissions.EnsureGrantedAsync<Permissions.Photos>();
 
 			if (!pickExisting)
 				await Permissions.EnsureGrantedAsync<Permissions.Camera>();
 
-			var vc = Platform.GetCurrentViewController(true);
+			var vc = WindowStateManager.Default.GetCurrentUIViewController(true);
 
 			picker = new UIImagePickerController();
 			picker.SourceType = sourceType;
@@ -60,7 +72,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			if (!string.IsNullOrWhiteSpace(options?.Title))
 				picker.Title = options.Title;
 
-			if (DeviceInfo.Idiom == DeviceIdiom.Tablet && picker.PopoverPresentationController != null && vc.View != null)
+			if (DeviceInfo.Current.Idiom == DeviceIdiom.Tablet && picker.PopoverPresentationController != null && vc.View != null)
 				picker.PopoverPresentationController.SourceRect = vc.View.Bounds;
 
 			var tcs = new TaskCompletionSource<FileResult>(picker);
@@ -76,7 +88,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			if (picker.PresentationController != null)
 			{
 				picker.PresentationController.Delegate =
-					new Platform.UIPresentationControllerDelegate(() => GetFileResult(null, tcs));
+					new UIPresentationControllerDelegate(() => GetFileResult(null, tcs));
 			}
 
 			await vc.PresentViewControllerAsync(picker, true);
@@ -109,7 +121,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			PHAsset phAsset = null;
 			NSUrl assetUrl = null;
 
-			if (Platform.HasOSVersion(11, 0))
+			if (OperatingSystem.IsIOSVersionAtLeast(11, 0))
 			{
 				assetUrl = info[UIImagePickerController.ImageUrl] as NSUrl;
 
@@ -119,7 +131,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 
 				if (assetUrl != null)
 				{
-					if (!assetUrl.Scheme.Equals("assets-library", StringComparison.InvariantCultureIgnoreCase))
+					if (!assetUrl.Scheme.Equals("assets-library", StringComparison.OrdinalIgnoreCase))
 						return new UIDocumentFileResult(assetUrl);
 
 					phAsset = info.ValueForKey(UIImagePickerController.PHAsset) as PHAsset;
@@ -147,13 +159,7 @@ namespace Microsoft.Maui.Essentials.Implementations
 			if (phAsset == null || assetUrl == null)
 				return null;
 
-			string originalFilename;
-
-			if (Platform.HasOSVersion(9, 0))
-				originalFilename = PHAssetResource.GetAssetResources(phAsset).FirstOrDefault()?.OriginalFilename;
-			else
-				originalFilename = phAsset.ValueForKey(new NSString("filename")) as NSString;
-
+			string originalFilename = PHAssetResource.GetAssetResources(phAsset).FirstOrDefault()?.OriginalFilename;
 			return new PHAssetFileResult(assetUrl, phAsset, originalFilename);
 		}
 

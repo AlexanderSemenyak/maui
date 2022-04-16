@@ -3,27 +3,43 @@
 using System;
 using Microsoft.Maui.Controls.Platform;
 #if __ANDROID__
+#pragma warning disable CS0612 // Type or member is obsolete
 using static Microsoft.Maui.Controls.Compatibility.Platform.Android.Platform;
+#pragma warning restore CS0612 // Type or member is obsolete
 using PlatformView = Android.Views.View;
 using IVisualElementRenderer = Microsoft.Maui.Controls.Compatibility.Platform.Android.IVisualElementRenderer;
 using ViewHandler = Microsoft.Maui.Handlers.ViewHandler<Microsoft.Maui.IView, Android.Views.View>;
 #elif __IOS__ || MACCATALYST
+#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
 using static Microsoft.Maui.Controls.Compatibility.Platform.iOS.Platform;
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
 using PlatformView = UIKit.UIView;
 using Microsoft.Maui.Controls.Compatibility.Platform.iOS;
 using ViewHandler = Microsoft.Maui.Handlers.ViewHandler<Microsoft.Maui.IView, UIKit.UIView>;
+#elif TIZEN
+#pragma warning disable CS0612 // Type or member is obsolete
+using static Microsoft.Maui.Controls.Compatibility.Platform.Tizen.Platform;
+#pragma warning disable CS0612 // Type or member is obsolete
+using PlatformView = ElmSharp.EvasObject;
+using Microsoft.Maui.Controls.Compatibility.Platform.Tizen;
+using ViewHandler = Microsoft.Maui.Handlers.ViewHandler<Microsoft.Maui.IView, ElmSharp.EvasObject>;
 #elif NETSTANDARD
 using PlatformView = System.Object;
 using ViewHandler = Microsoft.Maui.Handlers.ViewHandler<Microsoft.Maui.IView, System.Object>;
 #elif WINDOWS
 using ViewHandler = Microsoft.Maui.Handlers.ViewHandler<Microsoft.Maui.IView, Microsoft.UI.Xaml.FrameworkElement>;
 using PlatformView = Microsoft.UI.Xaml.FrameworkElement;
+#pragma warning disable CS0612 // Type or member is obsolete
 using static Microsoft.Maui.Controls.Compatibility.Platform.UWP.Platform;
+#pragma warning restore CS0612 // Type or member is obsolete
 using Microsoft.Maui.Controls.Compatibility.Platform.UWP;
 #endif
 
 namespace Microsoft.Maui.Controls.Compatibility
 {
+	[Obsolete]
 	public partial class RendererToHandlerShim : ViewHandler
 	{
 		public static PropertyMapper<IView, ViewHandler> ShimMapper = new PropertyMapper<IView, ViewHandler>(ViewHandler.ViewMapper)
@@ -52,9 +68,10 @@ namespace Microsoft.Maui.Controls.Compatibility
 
 		public RendererToHandlerShim() : base(ShimMapper)
 		{
+			Hosting.MauiAppBuilderExtensions.CheckForCompatibility();
 		}
 
-#if __ANDROID__ || __IOS__ || WINDOWS || MACCATALYST
+#if PLATFORM
 		internal IVisualElementRenderer? VisualElementRenderer { get; private set; }
 		new IView? VirtualView => (this as IViewHandler).VirtualView;
 

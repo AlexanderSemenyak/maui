@@ -321,6 +321,13 @@ namespace Microsoft.Maui.Graphics
 			InvalidateSelf();
 		}
 
+		public void InvalidateBorderBounds()
+		{
+			_bounds = null;
+
+			InvalidateSelf();
+		}
+
 		protected override void OnBoundsChange(ARect? bounds)
 		{
 			if (_bounds != bounds)
@@ -380,7 +387,7 @@ namespace Microsoft.Maui.Graphics
 
 					if (_shape != null)
 					{
-						var bounds = new Rectangle(0, 0, _width, _height);
+						var bounds = new Graphics.Rect(0, 0, _width, _height);
 						var path = _shape.PathForBounds(bounds);
 						var clipPath = path?.AsAndroidPath();
 

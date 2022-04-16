@@ -13,24 +13,39 @@ using Xunit;
 namespace Microsoft.Maui.DeviceTests
 {
 	[Category(TestCategory.NavigationPage)]
+	[Collection(HandlerTestBase.RunInNewWindowCollection)]
 	public partial class NavigationPageTests : HandlerTestBase
 	{
-		MaterialToolbar GetPlatformToolbar(IElementHandler handler) =>
-			GetPlatformToolbar(handler.MauiContext);
-
-		MaterialToolbar GetPlatformToolbar(IMauiContext mauiContext)
+		// We only want to fire BackButtonVisible Toolbar events if the user
+		// is changing the default behavior of the BackButtonVisibility
+		// this way the platform animations are allowed to just happen naturally
+		[Fact(DisplayName = "Pushing And Popping Doesnt Fire BackButtonVisible Toolbar Events")]
+		public async Task PushingAndPoppingDoesntFireBackButtonVisibleToolbarEvents()
 		{
-			var navManager = mauiContext.GetNavigationRootManager();
-			return navManager.ToolbarElement.Toolbar.Handler.PlatformView as
-				MaterialToolbar;
-		}
+			SetupBuilder();
+			var navPage = new NavigationPage(new ContentPage()
+			{
+				Title = "Page Title"
+			});
 
-		public bool IsBackButtonVisible(IElementHandler handler) =>
-			IsBackButtonVisible(handler.MauiContext);
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				bool failed = false;
+				var toolbar = (NavigationPageToolbar)navPage.FindMyToolbar();
+				toolbar.PropertyChanged += (_, args) =>
+				{
+					if (args.PropertyName == nameof(Toolbar.BackButtonVisible) ||
+						args.PropertyName == nameof(Toolbar.DrawerToggleVisible))
+					{
+						failed = true;
+					}
+				};
 
-		public bool IsBackButtonVisible(IMauiContext mauiContext)
-		{
-			return GetPlatformToolbar(mauiContext).NavigationIcon != null;
+				await navPage.Navigation.PushAsync(new ContentPage());
+				Assert.False(failed);
+				await navPage.Navigation.PopAsync();
+				Assert.False(failed);
+			});
 		}
 
 		public bool IsNavigationBarVisible(IElementHandler handler) =>
@@ -38,8 +53,8 @@ namespace Microsoft.Maui.DeviceTests
 
 		public bool IsNavigationBarVisible(IMauiContext mauiContext)
 		{
-			return GetPlatformToolbar(mauiContext)
-					.LayoutParameters.Height > 0;
+			return GetPlatformToolbar(mauiContext)?
+					.LayoutParameters?.Height > 0;
 		}
 
 		public bool ToolbarItemsMatch(
